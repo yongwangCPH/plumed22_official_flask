@@ -23,6 +23,7 @@
 #define __PLUMED_core_Value_h
 
 #include <vector>
+#include <set>
 #include <string>
 #include <map>
 #include "tools/Exception.h"
@@ -66,6 +67,7 @@ private:
   double inputForce;
 /// A flag telling us we have a force acting on this quantity
   bool hasForce;
+  std::set<unsigned> non_zero_derivatives;
 /// The derivatives of the quantity stored in value
   std::vector<double> derivatives;
   std::map<AtomNumber,Vector> gradients;
@@ -164,8 +166,9 @@ void product( const Value& val1, const Value& val2, Value& valout ){
   if( valout.derivatives.size()!=val1.derivatives.size() ) valout.derivatives.resize( val1.derivatives.size() );
   valout.value_set=false; valout.derivatives.assign(valout.derivatives.size(),0.0);
   double u, v; u=val1.value; v=val2.value;
-  for(unsigned i=0;i<val1.derivatives.size();++i){
-     valout.addDerivative(i, u*val2.derivatives[i] + v*val1.derivatives[i] );
+// I do not filter on val2 here - perhaps I should do it
+  for(std::set<unsigned>::iterator i=val1.non_zero_derivatives.begin();i!=val1.non_zero_derivatives.end();i++){
+     valout.addDerivative(*i, u*val2.derivatives[*i] + v*val1.derivatives[*i] );
   }
   valout.set( u*v );
 }
@@ -176,8 +179,9 @@ void quotient( const Value& val1, const Value& val2, Value* valout ){
   if( valout->derivatives.size()!=val1.derivatives.size() ) valout->derivatives.resize( val1.derivatives.size() );
   valout->value_set=false; valout->derivatives.assign(valout->derivatives.size(),0.0);
   double u, v; u=val1.get(); v=val2.get();
-  for(unsigned i=0;i<val1.getNumberOfDerivatives();++i){
-     valout->addDerivative(i, v*val1.getDerivative(i) - u*val2.getDerivative(i) );
+// I do not filter on val2 here - perhaps I should do it
+  for(std::set<unsigned>::iterator i=val1.non_zero_derivatives.begin();i!=val1.non_zero_derivatives.end();i++){
+     valout->addDerivative(*i, v*val1.getDerivative(*i) - u*val2.getDerivative(*i) );
   }
   valout->chainRule( 1/(v*v) ); valout->set( u / v );
 }
@@ -237,12 +241,14 @@ inline
 void Value::addDerivative(unsigned i,double d){
   plumed_dbg_massert(i<derivatives.size(),"derivative is out of bounds");
   derivatives[i]+=d;
+  non_zero_derivatives.insert(i);
 }
 
 inline
 void Value::setDerivative(unsigned i, double d){
   plumed_dbg_massert(i<derivatives.size(),"derivative is out of bounds");
   derivatives[i]=d;
+  non_zero_derivatives.insert(i);
 }
 
 inline
@@ -259,7 +265,9 @@ void Value::clearInputForce(){
 inline
 void Value::clearDerivatives(){
   value_set=false;
-  std::fill(derivatives.begin(), derivatives.end(), 0);
+  for(std::set<unsigned>::iterator i=non_zero_derivatives.begin();i!=non_zero_derivatives.end();i++)
+    derivatives[*i]=0;
+  non_zero_derivatives.clear();
 }
 
 inline

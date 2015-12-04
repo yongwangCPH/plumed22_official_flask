@@ -166,9 +166,10 @@ void product( const Value& val1, const Value& val2, Value& valout ){
   if( valout.derivatives.size()!=val1.derivatives.size() ) valout.derivatives.resize( val1.derivatives.size() );
   valout.value_set=false; valout.derivatives.assign(valout.derivatives.size(),0.0);
   double u, v; u=val1.value; v=val2.value;
-// I do not filter on val2 here - perhaps I should do it
-  for(std::set<unsigned>::iterator i=val1.non_zero_derivatives.begin();i!=val1.non_zero_derivatives.end();i++){
-     valout.addDerivative(*i, u*val2.derivatives[*i] + v*val1.derivatives[*i] );
+// I do not filter on val1 and val2 here - perhaps I should do it
+  const size_t n=valout.derivatives.size();
+  for(unsigned i=0;i<n;i++){
+     valout.addDerivative(i, u*val2.derivatives[i] + v*val1.derivatives[i] );
   }
   valout.set( u*v );
 }
@@ -179,9 +180,10 @@ void quotient( const Value& val1, const Value& val2, Value* valout ){
   if( valout->derivatives.size()!=val1.derivatives.size() ) valout->derivatives.resize( val1.derivatives.size() );
   valout->value_set=false; valout->derivatives.assign(valout->derivatives.size(),0.0);
   double u, v; u=val1.get(); v=val2.get();
-// I do not filter on val2 here - perhaps I should do it
-  for(std::set<unsigned>::iterator i=val1.non_zero_derivatives.begin();i!=val1.non_zero_derivatives.end();i++){
-     valout->addDerivative(*i, v*val1.getDerivative(*i) - u*val2.getDerivative(*i) );
+// I do not filter on val1 and val2 here - perhaps I should do it
+  const size_t n=valout->derivatives.size();
+  for(unsigned i=0;i<n;i++){
+     valout->addDerivative(i, v*val1.getDerivative(i) - u*val2.getDerivative(i) );
   }
   valout->chainRule( 1/(v*v) ); valout->set( u / v );
 }

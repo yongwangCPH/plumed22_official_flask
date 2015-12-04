@@ -267,8 +267,10 @@ void Value::clearInputForce(){
 inline
 void Value::clearDerivatives(){
   value_set=false;
-  for(std::set<unsigned>::iterator i=non_zero_derivatives.begin();i!=non_zero_derivatives.end();i++)
-    derivatives[*i]=0;
+  for(std::set<unsigned>::iterator i=non_zero_derivatives.begin();i!=non_zero_derivatives.end();i++){
+// this if is required since when derivatives are resized the non_zero set is not updated
+    if(*i<derivatives.size()) derivatives[*i]=0;
+  }
   non_zero_derivatives.clear();
 }
 

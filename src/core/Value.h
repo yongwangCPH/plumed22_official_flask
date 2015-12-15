@@ -249,7 +249,8 @@ inline
 void Value::resizeDerivatives(int n){
   derivatives.resize(n);
   active_der.clear();
-  for(unsigned i=0; i<n; ++i) active_der.addIndexToList(i);
+  std::vector<unsigned> myind( n ); for(unsigned i=0;i<n;++i) myind[i]=i;
+  active_der.createIndexListFromVector( myind );
 }
 
 inline
@@ -274,7 +275,7 @@ void Value::setDerivative(unsigned i, double d){
 
 inline
 void Value::updateActiveDerivatives(){
-  if(active_der.needsUpdate()) active_der.updateActiveMembers();
+  if( !active_der.updateComplete() && active_der.needsUpdate()) active_der.updateActiveMembers();
 }
 
 inline
@@ -291,6 +292,7 @@ void Value::clearInputForce(){
 inline
 void Value::clearDerivatives(){
   value_set=false;
+  if( !active_der.updateComplete() && active_der.needsUpdate()) active_der.updateActiveMembers();
   unsigned num=active_der.getNumberActive();
   if(num==derivatives.size()) std::fill(derivatives.begin(), derivatives.end(), 0);
   else {
@@ -299,7 +301,7 @@ void Value::clearDerivatives(){
       derivatives[ider]=0;
     }
   }
-  //active_der.deactivateAll();
+  active_der.deactivateAll();
 }
 
 inline
